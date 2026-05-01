@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mesa Industrial Roof & HVAC</title>
+    
+    <!-- Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Source+Sans+3:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Scripts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/Draggable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+
+    <style>
+        :root {
+            --true-black: #0a0a09;
+            --ash: #f2ede4;
+            --furnace-orange: #e85000;
+            --font-display: 'Barlow Condensed', sans-serif;
+            --font-body: 'Source Sans 3', sans-serif;
+        }
+
+        body {
+            background-color: var(--ash);
+            color: var(--true-black);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            background-image: 
+                linear-gradient(rgba(10, 10, 9, 0.08) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(10, 10, 9, 0.08) 2px, transparent 2px);
+            background-size: 20px 20px;
+            background-position: 0 0;
+        }
+        
+        @media (min-width: 768px) {
+            body {
+                background-size: 40px 40px;
+            }
+        }
+
+        /* Viewport Hardware Frame */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            border: 8px solid var(--true-black);
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        /* Continuous Tie-Down Lines */
+        .tie-line-v {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 2px;
+            background-color: var(--true-black);
+            z-index: 0;
+            pointer-events: none;
+            transform-origin: top;
+        }
+        .tie-line-h {
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background-color: var(--true-black);
+            z-index: 0;
+            pointer-events: none;
+            transform-origin: left;
+        }
+
+        /* Interaction Fidelity Constraints */
+        .interactive-ui {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+
+        @media (hover: none) and (pointer: coarse) {
+            * { cursor: auto !important; }
+        }
+
+        /* Typography Sub-structures */
+        h1, h2, h3, h4, .font-display {
+            font-family: var(--font-display);
+            text-transform: uppercase;
+            line-height: 0.85;
+            margin: 0;
+        }
+
+        .data-label {
+            font-family: monospace;
+            font-size: 0.65rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--true-black);
+            font-weight: 700;
+            background: var(--ash);
+            padding: 0 4px;
+            display: inline-block;
+        }
+
+        /* Hero Optics */
+        .hero-text-wrapper {
+            position: relative;
+            z-index: 10;
+            border-left: 4px solid var(--furnace-orange);
+            padding-left: 20px;
+            background: var(--ash);
+        }
+        
+        .hero-headline {
+            font-size: clamp(3rem, 15vw, 10rem); 
+            white-space: normal;
+            word-wrap: break-word;
+            line-height: 0.85;
+            letter-spacing: -0.03em;
+            color: var(--true-black);
+            font-weight: 900;
+        }
+
+        /* Brutalist UI Components */
+        .tabular {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .slider-track {
+            height: 8px;
+            background: var(--true-black);
+            width: 100%;
+            border-radius: 0;
+            box-shadow: inset 0 2px 4px rgba(10,10,9,0.5);
+            display: flex;
+            align-items: center;
+        }
+        .slider-thumb {
+            width: 40px;
+            height: 40px;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--furnace-orange),
+                var(--furnace-orange) 10px,
+                var(--true-black) 10px,
+                var(--true-black) 20px
+            );
+            border: 4px solid var(--true-black);
+            cursor: grab;
+            box-shadow: 6px 6px 0px rgba(10,10,9,1);
+            transition: transform 0.1s;
+        }
+        .slider-thumb:active {
+            transform: scale(0.9);
+        }
+
+        /* Proof Deck Physics */
+        .deck-container {
+            width: 100%;
+            height: 400px;
+            display: grid;
+            place-items: center;
+            perspective: 1000px;
+            position: relative;
+            z-index: 10;
+        }
+        .proof-card {
+            grid-area: 1 / 1;
+            width: 100%;
+            max-width: 320px;
+            height: 400px;
+            background: var(--ash);
+            border: 4px solid var(--true-black);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 12px 12px 0px rgba(10,10,9,1);
+            will-change: transform;
+            cursor: grab;
+        }
+        @media (min-width: 768px) {
+            .proof-card {
+                padding: 40px;
+                box-shadow: 16px 16px 0px rgba(10,10,9,1);
+            }
+        }
+
+        /* Tabular Data Specs */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        @media (min-width: 768px) {
+            .spec-table { font-size: 0.85rem; }
+        }
+        .spec-table td {
+            height: 40px;
+            border-bottom: 2px solid var(--true-black);
+            vertical-align: bottom;
+            padding-bottom: 8px;
+        }
+        .spec-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Data Readout Panels */
+        .data-panel {
+            background: var(--true-black);
+            color: var(--ash);
+            padding: 30px;
+            border: 4px solid var(--furnace-orange);
+            position: relative;
+            overflow: hidden;
+        }
+        @media (min-width: 768px) { .data-panel { padding: 40px; } }
+        .data-panel::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(242, 237, 228, 0.03) 2px, rgba(242, 237, 228, 0.03) 4px);
+            pointer-events: none;
+        }
+
+        /* Progress Meters */
+        .meter-container {
+            width: 100%;
+            height: 24px;
+            border: 2px solid var(--ash);
+            margin-top: 8px;
+            position: relative;
+        }
+        .meter-fill {
+            height: 100%;
+            background: var(--furnace-orange);
+            width: 0%; /* Driven by GSAP */
+            transform-origin: left;
+        }
+        .meter-markers {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(90deg, transparent, transparent 19px, var(--ash) 19px, var(--ash) 20px);
+        }
+
+        /* Bottom Sticky CTA */
+        .sticky-cta {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: var(--furnace-orange);
+            color: var(--true-black);
+            padding: 16px 0;
+            text-align: center;
+            z-index: 40;
+            font-weight: 900;
+            font-size: 1.25rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: var(--font-display);
+            letter-spacing: 0.05em;
+            border: 4px solid var(--true-black);
+            box-shadow: 6px 6px 0px var(--true-black);
+            transform: translateY(0);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        @media (min-width: 768px) {
+            .sticky-cta {
+                bottom: 40px;
+                left: 40px;
+                right: 40px;
+                width: calc(100% - 80px);
+                padding: 18px 0;
+                font-size: 1.5rem;
+                box-shadow: 8px 8px 0px var(--true-black);
+            }
+        }
+        .sticky-cta:hover {
+            background: var(--true-black);
+            color: var(--furnace-orange);
+        }
+
+        /* Drawer */
+        .drawer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--true-black);
+            color: var(--ash);
+            z-index: 50;
+            transform: translateY(100%);
+            border-top: 4px solid var(--furnace-orange);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            will-change: transform;
+            min-height: 400px;
+        }
+        @media (min-width: 768px) { .drawer { padding: 40px; } }
+        
+        .drawer-handle {
+            width: 80px;
+            height: 8px;
+            background: var(--ash);
+            opacity: 0.5;
+            margin: -10px auto 30px auto;
+            border-radius: 4px;
+        }
+
+        .input-base {
+            background: transparent;
+            border: none;
+            border-bottom: 4px solid rgba(242, 237, 228, 0.2);
+            height: 60px;
+            font-size: 1.25rem;
+            font-family: var(--font-display);
+            color: var(--ash);
+            outline: none;
+            border-radius: 0;
+            transition: border-color 0.2s, padding-left 0.2s;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        @media (min-width: 768px) {
+            .input-base { height: 80px; font-size: 1.5rem; }
+        }
+        .input-base:focus {
+            border-color: var(--furnace-orange);
+            padding-left: 16px;
+        }
+
+        .crosshair {
+            width: 40px;
+            height: 40px;
+            pointer-events: none;
+            display: grid;
+            place-items: center;
+            background: var(--ash);
+        }
+        .crosshair::before, .crosshair::after {
+            content: ''; background: var(--true-black); grid-area: 1/1; transition: transform 0.5s ease;
+        }
+        .crosshair::before { width: 100%; height: 2px; }
+        .crosshair::after { height: 100%; width: 2px; }
+        
+        .ch-spin::before { transform: rotate(90deg); }
+        .ch-spin::after { transform: rotate(90deg); }
+    </style>
+</head>
+<body class="relative min-h-screen">
+
+    <!-- Universal Structural Tie-Downs (Adjusted for strict clearance) -->
+    <div class="tie-line-v left-[20px] md:left-[40px]"></div>
+    <div class="tie-line-v right-[20px] md:right-[40px]"></div>
+    <div class="tie-line-v hidden md:block" style="left: 50%;"></div>
+
+    <!-- Live Telemetry Bar -->
+    <div class="fixed top-0 left-0 w-full h-[40px] border-b-[2px] border-[#0a0a09] bg-[#f2ede4] z-50 flex items-center justify-between px-[20px] md:px-[40px] font-mono text-[0.65rem] font-[900] tracking-widest uppercase">
+        <span class="text-[#e85000]">MESA INDUSTRIAL INC.</span>
+        <span id="live-time" class="tabular">SYS.ACTIVE</span>
+        <span class="hidden md:inline">LOC: 33.4152° N, 111.8315° W</span>
+    </div>
+
+    <!-- Main Content Container (Padded inside the tie-lines) -->
+    <main class="w-full relative pt-[120px] md:pt-[160px] pb-[200px]">
+        
+        <!-- SECTION 1: HERO -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] scroll-section">
+            <div class="tie-line-h draw-line" style="top: -40px;"></div>
+            
+            <div class="crosshair absolute top-[-60px] right-[40px] md:right-[80px] z-10 spin-trigger"></div>
+            <div class="absolute top-[-60px] left-[40px] md:left-[80px] z-10 data-label">MESA, AZ // LIC: ROC384729</div>
+
+            <div class="hero-text-wrapper max-w-4xl mt-[40px]">
+                <h1 class="hero-headline decode-text">WE ROOF BUILDINGS.</h1>
+                <h1 class="hero-headline text-[#e85000] decode-text">WE MOVE AIR.</h1>
+                <p class="mt-[20px] md:mt-[40px] text-lg md:text-xl tracking-wide font-[700] uppercase text-[#0a0a09] max-w-2xl">
+                    40 years on Mesa rooftops taught us the truth. Water wins when contractors cut corners. We install 60-mil TPO membranes and bolt heavy-tonnage condensers to structural steel. Built to outlast the lease. Zero compromises.
+                </p>
+            </div>
+            
+            <div class="tie-line-h draw-line" style="bottom: -40px;"></div>
+            
+            <!-- Parallax Depth Marker -->
+            <div class="absolute right-[40px] md:right-[80px] bottom-[-80px] md:bottom-[-120px] font-display text-[15vw] md:text-[10vw] text-[#0a0a09] opacity-5 leading-none z-[-1] parallax-bg" data-speed="0.8">
+                STRUCTURAL
+            </div>
+        </section>
+
+        <!-- SECTION 2: FAILURE ANALYSIS -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] scroll-section">
+            <div class="flex flex-col xl:flex-row gap-[40px] xl:gap-[80px]">
+                
+                <div class="flex-1 z-10 p-[30px] md:p-[40px] bg-[#f2ede4] border-[4px] border-[#0a0a09]">
+                    <div class="data-label mb-[20px]">ENVIRONMENTAL LOAD // THERMAL DEGRADATION</div>
+                    <h2 class="text-5xl md:text-7xl mb-[30px] md:mb-[40px] text-[#0a0a09] decode-text">THE HEAT CYCLE.</h2>
+                    <p class="text-lg md:text-xl font-[700] leading-relaxed text-[#0a0a09] mb-[30px] md:mb-[40px]">
+                        115 degrees ambient dictates 160 degrees on the deck. Inferior membranes cook, shrink, and tear the seams apart in 36 months. When the August monsoons hit, water enters the facility. Inventory is destroyed. Operations halt. We engineer the failure points out of the equation.
+                    </p>
+                    
+                    <table class="spec-table w-full">
+                        <tr><td>Ambient Air (Peak)</td><td class="text-[#e85000] text-right tabular"><span class="count-up" data-target="118">0</span>°F</td></tr>
+                        <tr><td>Surface Load (Black EPDM)</td><td class="text-[#e85000] text-right tabular"><span class="count-up" data-target="168">0</span>°F</td></tr>
+                        <tr><td>Surface Load (White TPO)</td><td class="text-[#e85000] text-right tabular"><span class="count-up" data-target="122">0</span>°F</td></tr>
+                        <tr><td>Thermal Shock Delta</td><td class="text-[#e85000] text-right tabular"><span class="count-up" data-target="46">0</span>°F</td></tr>
+                    </table>
+                </div>
+
+                <div class="flex-1 z-10 data-panel flex flex-col justify-center">
+                    <h3 class="font-display text-4xl mb-[20px] text-[#e85000]">MATERIAL STRESS TOLERANCE</h3>
+                    
+                    <div class="mb-[20px]">
+                        <div class="flex justify-between font-mono text-[0.65rem] md:text-sm font-[700] uppercase mb-1">
+                            <span>Standard Acrylic Coating</span>
+                            <span class="text-[#e85000]">FAILS AT 3 YRS</span>
+                        </div>
+                        <div class="meter-container"><div class="meter-fill" data-width="15%"></div><div class="meter-markers"></div></div>
+                    </div>
+                    
+                    <div class="mb-[20px]">
+                        <div class="flex justify-between font-mono text-[0.65rem] md:text-sm font-[700] uppercase mb-1">
+                            <span>Modified Bitumen</span>
+                            <span class="text-[#e85000]">FAILS AT 12 YRS</span>
+                        </div>
+                        <div class="meter-container"><div class="meter-fill" data-width="45%"></div><div class="meter-markers"></div></div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between font-mono text-[0.65rem] md:text-sm font-[700] uppercase mb-1">
+                            <span>60-MIL TPO (Thermal Weld)</span>
+                            <span class="text-[#e85000]">20+ YR STABILITY</span>
+                        </div>
+                        <div class="meter-container"><div class="meter-fill" data-width="100%"></div><div class="meter-markers"></div></div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 3: DIAGNOSTICS & SPECS -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] flex flex-col xl:flex-row gap-[40px] xl:gap-[80px] scroll-section">
+            <div class="max-w-2xl z-10 flex-1 relative bg-[#f2ede4] p-[30px] md:p-[40px] border-[4px] border-[#0a0a09]">
+                <div class="tie-line-h draw-line hidden md:block" style="top: 120px; left: -100vw; width: 200vw; z-index: -1;"></div>
+                <div class="data-label mb-[20px]">THE FIX // ENVELOPE INTEGRITY</div>
+                <h2 class="text-5xl md:text-7xl mb-[30px] md:mb-[40px] text-[#e85000] font-[900] bg-[#0a0a09] inline-block p-2 decode-text">RIP OUT THE ROT.</h2>
+                
+                <p class="font-display text-4xl md:text-5xl mb-[20px]">WE SECURE THE FACILITY.</p>
+                <p class="text-lg md:text-xl font-[700] leading-relaxed text-[#0a0a09]">
+                    We tear out the saturated insulation and install systems engineered for the desert. Robotically welded seams. Structural steel curbs. We seal the envelope and we walk away leaving it watertight.
+                </p>
+            </div>
+
+            <div class="flex-1 z-10 bg-[#f2ede4] border-[4px] border-[#0a0a09] p-[30px] md:p-[40px] self-start shadow-[8px_8px_0px_#0a0a09] md:shadow-[12px_12px_0px_#0a0a09]">
+                <h3 class="font-display text-3xl md:text-4xl mb-[20px] decode-text">HARD SPECIFICATIONS.</h3>
+                <table class="spec-table">
+                    <tr><td class="w-1/2">Membrane</td><td class="text-[#e85000] text-right">60-MIL TPO</td></tr>
+                    <tr><td>Seams</td><td class="text-[#e85000] text-right">ROBOTIC WELD</td></tr>
+                    <tr><td>Wind Uplift</td><td class="text-[#e85000] text-right">FM 1-90 RATED</td></tr>
+                    <tr><td>HVAC Curbs</td><td class="text-[#e85000] text-right">14-GAUGE STEEL</td></tr>
+                    <tr><td>Condenser</td><td class="text-[#e85000] text-right">5-TON COMMERCIAL</td></tr>
+                    <tr><td>Warranty</td><td class="text-[#e85000] text-right">20-YEAR NDL</td></tr>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECTION 4: HEAVY LIFT LOGISTICS -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] scroll-section">
+            <div class="tie-line-h draw-line" style="top: -40px;"></div>
+            
+            <div class="flex flex-col lg:flex-row gap-[40px] xl:gap-[80px]">
+                <div class="flex-1 z-10 bg-[#0a0a09] border-[4px] border-[#e85000] p-[30px] md:p-[40px] text-[#f2ede4]">
+                    <div class="data-label !bg-[#e85000] !text-[#0a0a09] mb-[20px]">EXECUTION // HEAVY LIFTING</div>
+                    <h2 class="text-5xl md:text-7xl mb-[30px] md:mb-[40px] text-[#f2ede4] decode-text">STRUCTURAL LOAD.</h2>
+                    <p class="text-lg md:text-xl font-[700] leading-relaxed mb-[30px] md:mb-[40px]">
+                        A 10-ton package unit is not a residential swap. It requires structural reinforcement. We weld 14-gauge steel curbs directly to the joists. Cranes deploy at 0400 hours to bypass traffic and heat constraints. The facility stays online. We handle the weight.
+                    </p>
+                    <div class="grid grid-cols-2 gap-[20px] md:gap-[40px] font-display text-4xl md:text-5xl text-[#e85000]">
+                        <div>
+                            <span class="block text-xs md:text-sm font-mono font-[700] text-[#f2ede4] mb-2 uppercase tracking-widest">Max Lift Cap.</span>
+                            <span class="tabular"><span class="count-up" data-target="40">0</span> TON</span>
+                        </div>
+                        <div>
+                            <span class="block text-xs md:text-sm font-mono font-[700] text-[#f2ede4] mb-2 uppercase tracking-widest">Steel Gauge</span>
+                            <span class="tabular"><span class="count-up" data-target="14">0</span> GA</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tie-line-h draw-line" style="bottom: -40px;"></div>
+        </section>
+
+        <!-- SECTION 5: PRICING -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] scroll-section">
+            
+            <div class="max-w-3xl w-full z-10 bg-[#f2ede4] p-[30px] md:p-[40px] border-[4px] border-[#0a0a09] mx-auto md:mx-0">
+                <div class="data-label mb-[20px]">ESTIMATION // THE NUMBERS</div>
+                <h2 class="text-5xl md:text-7xl mb-[30px] md:mb-[40px] decode-text">CALCULATE SCALE.</h2>
+                
+                <p class="text-base md:text-lg font-[700] uppercase mb-[30px] md:mb-[40px]">
+                    Square footage dictates the material order. Tonnage dictates the cooling load. Slide the bar. View the baseline calculation. We measure the roof, quote the job, and execute the work.
+                </p>
+
+                <div class="mb-[20px] flex justify-between items-end border-b-[4px] border-[#0a0a09] pb-[20px]">
+                    <span class="font-[900] text-base md:text-xl tracking-wider uppercase">Facility Footprint</span>
+                    <span class="font-display text-4xl md:text-6xl tabular text-[#e85000] leading-none" id="sqft-readout">1,200 SQFT</span>
+                </div>
+                
+                <div class="py-[40px] relative">
+                    <div class="slider-track" id="slider-bounds">
+                        <div class="slider-thumb interactive-ui" id="slider-handle"></div>
+                    </div>
+                </div>
+
+                <div class="mt-[30px] md:mt-[40px] p-[15px] md:p-[20px] border-[4px] border-[#0a0a09] bg-[#e85000] flex flex-col md:flex-row justify-between items-center shadow-[6px_6px_0px_#0a0a09] md:shadow-[8px_8px_0px_#0a0a09]">
+                    <span class="text-base md:text-lg font-[900] tracking-widest uppercase text-[#0a0a09] mb-[10px] md:mb-0">Baseline Projection</span>
+                    <span class="font-display text-4xl md:text-5xl tabular text-[#0a0a09]" id="price-readout">$6,400</span>
+                </div>
+            </div>
+            
+            <div class="absolute right-[40px] top-[120px] font-display text-[15vw] text-[#0a0a09] opacity-5 leading-none z-[-1] parallax-bg [writing-mode:vertical-rl] rotate-180 hidden md:block" data-speed="1.2">
+                ESTIMATE
+            </div>
+        </section>
+
+        <!-- SECTION 6: PROOF DECK -->
+        <section class="relative px-[40px] md:px-[80px] mb-[120px] md:mb-[160px] flex flex-col lg:flex-row items-center gap-[40px] md:gap-[80px] scroll-section">
+            <div class="tie-line-h draw-line" style="top: -40px;"></div>
+            
+            <div class="z-10 flex-1 bg-[#f2ede4] p-[30px] md:p-[40px] w-full">
+                <div class="data-label mb-[20px]">TELEMETRY // RECENT DEPLOYMENTS</div>
+                <h2 class="text-5xl md:text-7xl text-[#e85000] mb-[20px] decode-text">FIELD DATA.</h2>
+                <p class="font-[900] text-base md:text-lg uppercase text-[#0a0a09]">
+                    Swipe the deck. Review the raw data from our field crews. We document the installation because we stand behind the structural integrity.
+                </p>
+            </div>
+            
+            <div class="deck-container flex-1">
+                <!-- Card 3 (Bottom) -->
+                <div class="proof-card interactive-ui" style="transform: scale(0.9) translateY(40px); opacity: 0.6; z-index: 1;">
+                    <div>
+                        <p class="data-label text-[#e85000] mb-[15px] border-b-[2px] border-[#0a0a09] pb-[10px]">LIFESPAN: 25 YRS // DEPLOY: 2026</p>
+                        <p class="font-display text-3xl md:text-4xl leading-none">TPO MEMBRANE.</p>
+                    </div>
+                    <div class="text-base md:text-lg font-[700] border-t-[4px] border-[#0a0a09] pt-[15px]">1,400 SQFT. THERMAL WELDED SEAMS.</div>
+                </div>
+                <!-- Card 2 (Middle) -->
+                <div class="proof-card interactive-ui absolute" style="transform: scale(0.95) translateY(20px); opacity: 0.8; z-index: 2;">
+                    <div>
+                        <p class="data-label text-[#e85000] mb-[15px] border-b-[2px] border-[#0a0a09] pb-[10px]">EFFICIENCY: +24% // LIFT: H-VAC</p>
+                        <p class="font-display text-3xl md:text-4xl leading-none">CONDENSER UPGRADE.</p>
+                    </div>
+                    <div class="text-base md:text-lg font-[700] border-t-[4px] border-[#0a0a09] pt-[15px]">5-TON UNIT. PINPOINT LIFT.</div>
+                </div>
+                <!-- Card 1 (Top) -->
+                <div class="proof-card interactive-ui grab-element absolute" style="z-index: 10;">
+                    <div>
+                        <p class="data-label text-[#e85000] mb-[15px] border-b-[2px] border-[#0a0a09] pb-[10px]">DURABILITY RATING: CLASS 4</p>
+                        <p class="font-display text-3xl md:text-4xl leading-none">CORRUGATED DECK.</p>
+                    </div>
+                    <div class="text-sm md:text-base font-[700] border-t-[4px] border-[#0a0a09] pt-[15px]">
+                        <span class="block mb-[10px] font-[900] text-lg md:text-xl text-[#e85000] bg-[#0a0a09] px-2 py-1 inline-block">14-GAUGE STEEL.</span>
+                        <br>RAW FIELD DATA. MESA, AZ.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tie-line-h draw-line" style="bottom: -40px;"></div>
+        </section>
+
+        <!-- SECTION 7: LEGAL & FOOTER -->
+        <section class="relative px-[40px] md:px-[80px] scroll-section">
+            <div class="bg-[#f2ede4] p-[30px] md:p-[40px] border-[4px] border-[#0a0a09] z-10 relative">
+                <div class="data-label mb-[20px]">LOGISTICS // SERVICE AREA</div>
+                <h2 class="text-4xl md:text-6xl mb-[20px] decode-text">MARICOPA COUNTY.</h2>
+                <p class="font-[900] text-base md:text-lg uppercase text-[#0a0a09] max-w-xl">
+                    We stay local so our crews arrive on site when the weather turns. We serve the industrial parks and commercial centers of the East Valley.
+                </p>
+            </div>
+
+            <footer class="mt-[80px] pt-[40px] border-t-[4px] border-[#0a0a09] text-xs md:text-sm font-[900] uppercase tracking-widest z-10 relative bg-[#f2ede4] pb-[60px] md:pb-[40px]">
+                <div class="flex flex-col md:flex-row justify-between gap-[20px]">
+                    <div>
+                        <p class="mb-1 text-[#e85000]">© 2026 MESA INDUSTRIAL INC.</p>
+                        <p>LIC #ROC384729. BONDED. INSURED.</p>
+                    </div>
+                    <div class="md:text-right">
+                        <p>STANDARDS ENFORCED. ZERO SHORTCUTS.</p>
+                    </div>
+                </div>
+            </footer>
+        </section>
+
+    </main>
+
+    <!-- FIXED CTA -->
+    <button class="sticky-cta interactive-ui magnetic-btn" id="cta-trigger">
+        GET ON THE SCHEDULE
+    </button>
+
+    <!-- DRAWER -->
+    <div class="drawer" id="cta-drawer">
+        <div class="w-full flex items-center justify-center interactive-ui" id="drawer-drag-zone" style="cursor: grab;">
+            <div class="drawer-handle"></div>
+        </div>
+        
+        <div class="data-label text-[#e85000] mb-[20px] self-start">TRANSMISSION // DISPATCH</div>
+        <h3 class="font-display text-4xl md:text-6xl mb-[20px] md:mb-[40px]">PROVIDE THE SPECS.</h3>
+        <p class="font-[700] text-sm md:text-base uppercase mb-[30px] md:mb-[40px]">Give us the address and the contact number. We send a truck.</p>
+        
+        <form id="dispatch-form" class="flex flex-col gap-[20px] md:gap-[40px] flex-1 relative">
+            <input type="text" class="input-base" placeholder="Facility Address" required>
+            <input type="tel" class="input-base" placeholder="Site Contact Number" required>
+            <button type="submit" class="mt-auto bg-[#e85000] text-[#0a0a09] font-display text-3xl md:text-4xl py-[15px] md:py-[20px] uppercase tracking-widest border-[4px] border-[#e85000] hover:bg-transparent hover:text-[#e85000] transition-colors interactive-ui">INITIATE DISPATCH.</button>
+        </form>
+    </div>
+
+    <!-- COOKIE CONSENT MODAL (Anchored securely above mobile CTA) -->
+    <div id="cookie-modal" class="fixed bottom-[100px] left-[20px] right-[20px] md:bottom-[40px] md:left-[40px] md:right-auto md:w-[420px] bg-[#f2ede4] border-[4px] border-[#0a0a09] p-[20px] md:p-[30px] z-[100] shadow-[8px_8px_0px_#0a0a09] md:shadow-[12px_12px_0px_#0a0a09] opacity-0 pointer-events-none" style="transform: translateY(20px);">
+        <div class="data-label mb-[10px]">TELEMETRY // DATA COLLECTION</div>
+        <h3 class="font-display text-3xl md:text-4xl mb-[10px] md:mb-[15px]">COOKIE PROTOCOL.</h3>
+        <p class="font-[700] text-[#0a0a09] text-xs md:text-sm mb-[20px] leading-relaxed">
+            We log operational data to secure sessions and monitor site performance. No third-party data brokering. Review the <a href="#" class="text-[#e85000] underline hover:text-[#0a0a09] interactive-ui">Privacy Policy</a> or configure <button class="underline hover:text-[#e85000] interactive-ui">Preferences</button>.
+        </p>
+        <div class="flex gap-[10px] md:gap-[15px]">
+            <button id="btn-decline-cookies" class="interactive-ui flex-1 px-[10px] md:px-[15px] py-[8px] md:py-[10px] border-[4px] border-[#0a0a09] bg-transparent text-[#0a0a09] font-display text-xl md:text-2xl uppercase tracking-widest hover:bg-[#0a0a09] hover:text-[#f2ede4] transition-colors">DECLINE</button>
+            <button id="btn-accept-cookies" class="interactive-ui flex-1 px-[10px] md:px-[15px] py-[8px] md:py-[10px] border-[4px] border-[#0a0a09] bg-[#e85000] text-[#0a0a09] font-display text-xl md:text-2xl uppercase tracking-widest hover:bg-[#0a0a09] hover:border-[#0a0a09] hover:text-[#f2ede4] transition-colors">ACCEPT</button>
+        </div>
+    </div>
+
+    <!-- Engine Execution -->
+    <script>
+        gsap.registerPlugin(Draggable, ScrollTrigger);
+
+        /* 1. SCROLL ENGINE & STRUCTURAL ANIMATIONS */
+        // Draw Blueprint Lines
+        gsap.utils.toArray('.draw-line').forEach(line => {
+            gsap.fromTo(line, 
+                { scaleX: 0 }, 
+                { scaleX: 1, duration: 1.5, ease: "power3.out", scrollTrigger: {
+                    trigger: line,
+                    start: "top 95%",
+                }}
+            );
+        });
+
+        // Parallax Background Text
+        gsap.utils.toArray('.parallax-bg').forEach(bg => {
+            const speed = bg.getAttribute('data-speed');
+            gsap.to(bg, {
+                y: () => (window.innerHeight * speed),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: bg.parentElement,
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: true
+                }
+            });
+        });
+
+        // Meter Fills
+        gsap.utils.toArray('.meter-fill').forEach(meter => {
+            const width = meter.getAttribute('data-width');
+            gsap.to(meter, {
+                width: width,
+                duration: 1.5,
+                ease: "power3.out",
+                scrollTrigger: {
+                    trigger: meter.parentElement,
+                    start: "top 85%"
+                }
+            });
+        });
+
+        // Count Up Numbers
+        gsap.utils.toArray('.count-up').forEach(num => {
+            const target = parseInt(num.getAttribute('data-target'));
+            gsap.to(num, {
+                innerHTML: target,
+                duration: 2,
+                snap: { innerHTML: 1 },
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: num,
+                    start: "top 90%"
+                }
+            });
+        });
+
+        /* 2. TEXT DECODE EFFECT (Fixed for execution reliability) */
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
+        gsap.utils.toArray('.decode-text').forEach(element => {
+            const originalText = element.innerText;
+            // Scramble immediately so it's not empty if triggers delay
+            element.innerText = originalText.replace(/./g, "0");
+            
+            ScrollTrigger.create({
+                trigger: element,
+                start: "top 95%",
+                onEnter: () => {
+                    let iterations = 0;
+                    const interval = setInterval(() => {
+                        element.innerText = originalText.split('').map((char, index) => {
+                            if(char === " ") return " ";
+                            if(index < iterations) return originalText[index];
+                            return chars[Math.floor(Math.random() * chars.length)];
+                        }).join('');
+                        
+                        if(iterations >= originalText.length) clearInterval(interval);
+                        iterations += 1/3; // Speed of decode
+                    }, 30);
+                },
+                once: true
+            });
+        });
+
+        /* 3. INTERACTIVE ELEMENTS */
+        // Spin Crosshairs on Viewport Enter
+        gsap.utils.toArray('.spin-trigger').forEach(ch => {
+            ScrollTrigger.create({
+                trigger: ch,
+                start: "top center",
+                onEnter: () => ch.classList.add('ch-spin'),
+                onLeaveBack: () => ch.classList.remove('ch-spin')
+            });
+        });
+
+        // Live Clock
+        setInterval(() => {
+            const d = new Date();
+            document.getElementById('live-time').innerText = 
+                String(d.getHours()).padStart(2, '0') + ":" + 
+                String(d.getMinutes()).padStart(2, '0') + ":" + 
+                String(d.getSeconds()).padStart(2, '0') + " MST";
+        }, 1000);
+
+        /* 4. PRICING SLIDER LOGIC */
+        const track = document.getElementById('slider-bounds');
+        const handle = document.getElementById('slider-handle');
+        const sqftReadout = document.getElementById('sqft-readout');
+        const priceReadout = document.getElementById('price-readout');
+        
+        const MIN_SQFT = 500;
+        const MAX_SQFT = 15000;
+        const PRICE_PER_SQFT = 5.33;
+
+        Draggable.create(handle, {
+            type: "x",
+            bounds: track,
+            onDrag: updatePricing
+        });
+
+        function updatePricing() {
+            const bounds = track.getBoundingClientRect();
+            const handleBounds = handle.getBoundingClientRect();
+            const maxDrag = bounds.width - handleBounds.width;
+            
+            let progress = this.x / maxDrag;
+            progress = Math.max(0, Math.min(1, progress)); 
+            
+            const currentSqft = Math.round(MIN_SQFT + (progress * (MAX_SQFT - MIN_SQFT)));
+            const currentPrice = Math.round(currentSqft * PRICE_PER_SQFT);
+
+            sqftReadout.innerHTML = currentSqft.toLocaleString() + " SQFT";
+            priceReadout.innerHTML = "$" + currentPrice.toLocaleString();
+        }
+
+        /* 5. VERLET/ELASTIC PHYSICS DECK */
+        const topCard = document.querySelector('.grab-element');
+        Draggable.create(topCard, {
+            type: "x,y",
+            edgeResistance: 0.85,
+            bounds: { minX: -40, maxX: 40, minY: -40, maxY: 40 },
+            onPress: function() {
+                gsap.to(topCard, { scale: 1.05, boxShadow: "24px 24px 0px rgba(10,10,9,1)", duration: 0.2 });
+            },
+            onRelease: function() {
+                gsap.to(topCard, {
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    boxShadow: "16px 16px 0px rgba(10,10,9,1)",
+                    ease: "elastic.out(1.2, 0.4)",
+                    duration: 1.4
+                });
+            }
+        });
+
+        /* 6. MAGNETIC CTA (Desktop Only) */
+        const cta = document.getElementById('cta-trigger');
+        if (window.matchMedia("(hover: hover)").matches) {
+            cta.addEventListener('mousemove', (e) => {
+                const rect = cta.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+                gsap.to(cta, { x: x * 0.2, y: y * 0.2, duration: 0.3, ease: "power2.out" });
+            });
+            cta.addEventListener('mouseleave', () => {
+                gsap.to(cta, { x: 0, y: 0, duration: 0.7, ease: "elastic.out(1, 0.3)" });
+            });
+        }
+
+        /* 7. DRAWER PHYSICS */
+        const drawer = document.getElementById('cta-drawer');
+        let drawerOpen = false;
+
+        cta.addEventListener('click', () => {
+            gsap.to(drawer, { y: "0%", duration: 0.6, ease: "expo.out" });
+            gsap.to(cta, { y: "150%", duration: 0.3 });
+            drawerOpen = true;
+        });
+
+        Draggable.create(drawer, {
+            type: "y",
+            trigger: "#drawer-drag-zone",
+            bounds: { minY: 0, maxY: window.innerHeight * 0.85 },
+            onRelease: function() {
+                if (this.y > 80) {
+                    gsap.to(drawer, { y: "100%", duration: 0.5, ease: "power3.in" });
+                    gsap.to(cta, { y: "0%", duration: 0.5, delay: 0.2, ease: "back.out(1.5)" });
+                    drawerOpen = false;
+                } else {
+                    gsap.to(drawer, { y: "0%", duration: 0.5, ease: "back.out(1.2)" });
+                }
+            }
+        });
+
+        /* 8. FORM SUBMISSION */
+        const form = document.getElementById('dispatch-form');
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+
+            const btn = form.querySelector('button');
+            const originalText = btn.innerText;
+            btn.innerText = "DISPATCH CONFIRMED.";
+            btn.style.backgroundColor = "var(--true-black)";
+            btn.style.color = "var(--furnace-orange)";
+
+            setTimeout(() => {
+                form.reset();
+                btn.innerText = originalText;
+                btn.style.backgroundColor = "var(--furnace-orange)";
+                btn.style.color = "var(--true-black)";
+                
+                gsap.to(drawer, { y: "100%", duration: 0.5, ease: "power3.in" });
+                gsap.to(cta, { y: "0%", duration: 0.5, delay: 0.2, ease: "back.out(1.5)" });
+                drawerOpen = false;
+            }, 1500);
+        });
+
+        /* 9. TELEMETRY / COOKIE PROTOCOL (Anchored for Clearance) */
+        const cookieModal = document.getElementById('cookie-modal');
+        const btnAccept = document.getElementById('btn-accept-cookies');
+        const btnDecline = document.getElementById('btn-decline-cookies');
+
+        if (!localStorage.getItem('mesa_telemetry_consent')) {
+            setTimeout(() => {
+                gsap.to(cookieModal, { y: 0, opacity: 1, duration: 0.8, ease: "elastic.out(1, 0.7)", pointerEvents: "auto" });
+            }, 1000);
+        }
+
+        function resolveCookies(status) {
+            localStorage.setItem('mesa_telemetry_consent', status);
+            gsap.to(cookieModal, { y: "50px", opacity: 0, duration: 0.4, ease: "power3.in", pointerEvents: "none" });
+        }
+
+        btnAccept.addEventListener('click', () => resolveCookies('accepted'));
+        btnDecline.addEventListener('click', () => resolveCookies('declined'));
+    </script>
+</body>
+</html>
